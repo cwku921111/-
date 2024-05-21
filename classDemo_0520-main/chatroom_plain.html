@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chatroom with Gemini API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #3494e6, #ec6ead);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        #messages {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+
+        .user-message {
+            background-color: #d1f7c4;
+            text-align: right;
+        }
+
+        .bot-message {
+            background-color: #c1dffc;
+        }
+
+        form {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button[type="submit"] {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Chatroom</h1>
+        <div id="messages"></div>
+        <form id="messageForm">
+            <input type="text" id="messageInput" placeholder="Type your message here..." required>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script>
+        var conversationHistory = [];
+
+        document.getElementById('messageForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            var message = document.getElementById('messageInput').value;
+
+            addToConversationHistory('user', message);
+            displayMessage(message, 'user');
+
+            fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=AIzaSyAxCMmslAZo3jw7T8lx9i_pfWkqXvUjEis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        "contents": conversationHistory
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(conversationHistory)
+                    var responseText = data.candidates[0].content.parts[0].text;
+                    addToConversationHistory('model', responseText);
+                    displayMessage(responseText, 'bot');
+
+                })
+                .catch(error => console.error('Error:', error));
+
+            document.getElementById('messageInput').value = '';
+        });
+
+        function addToConversationHistory(role, text) {
+            conversationHistory.push({
+                "role": role,
+                "parts": [{
+                    "text": text
+                }]
+            });
+        }
+
+        function displayMessage(message, sender) {
+            var messageElement = document.createElement('div');
+            messageElement.textContent = message;
+            messageElement.classList.add('message', sender + '-message');
+            document.getElementById('messages').appendChild(messageElement);
+        }
+    </script>
+</body>
+
+</html>
